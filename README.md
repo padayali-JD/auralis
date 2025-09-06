@@ -33,3 +33,8 @@ python auralis.py --input path/to/video.mp4 --model small
 
 Transcribe from a YouTube URL: 
 python auralis.py --url https://www.youtube.com/watch?v=<id> --model base
+
+<img width="1660" height="472" alt="image" src="https://github.com/user-attachments/assets/46fa6be4-f28c-44de-9510-06e54f2a424f" />
+
+<img width="1738" height="821" alt="image" src="https://github.com/user-attachments/assets/e75d0bc0-1b43-4607-92d3-46a35e5c72ea" />
+
