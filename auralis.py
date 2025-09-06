@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+    
 from __future__ import annotations
 
 import argparse
@@ -10,10 +10,39 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
-# Third‑party
+# ---------------- Banner ----------------
+def banner():
+    font = """
+
+ .S_SSSs     .S       S.    .S_sSSs     .S_SSSs    S.       .S    sSSs  
+.SS~SSSSS   .SS       SS.  .SS~YS%%b   .SS~SSSSS   SS.     .SS   d%%SP  
+S%S   SSSS  S%S       S%S  S%S   `S%b  S%S   SSSS  S%S     S%S  d%S'    
+S%S    S%S  S%S       S%S  S%S    S%S  S%S    S%S  S%S     S%S  S%|     
+S%S SSSS%S  S&S       S&S  S%S    d*S  S%S SSSS%S  S&S     S&S  S&S     
+S&S  SSS%S  S&S       S&S  S&S   .S*S  S&S  SSS%S  S&S     S&S  Y&Ss    
+S&S    S&S  S&S       S&S  S&S_sdSSS   S&S    S&S  S&S     S&S  `S&&S   
+S&S    S&S  S&S       S&S  S&S~YSY%b   S&S    S&S  S&S     S&S    `S*S  
+S*S    S&S  S*b       d*S  S*S   `S%b  S*S    S&S  S*b     S*S     l*S  
+S*S    S*S  S*S.     .S*S  S*S    S%S  S*S    S*S  S*S.    S*S    .S*P  
+S*S    S*S   SSSbs_sdSSS   S*S    S&S  S*S    S*S   SSSbs  S*S  sSS*S   
+SSS    S*S    YSSP~YSSY    S*S    SSS  SSS    S*S    YSSP  S*S  YSS'    
+       SP                  SP                 SP           SP           
+       Y                   Y                  Y            Y            
+                                                                        
+by Joby Daniel (Padayali-JD) 
+"""
+    try:
+        width = shutil.get_terminal_size().columns
+    except Exception:
+        width = 80
+    for line in font.splitlines():
+        print(line.center(width))
+
+# ---------------- Third-party deps ----------------
 try:
     import whisper  # OpenAI Whisper
 except Exception as e:
@@ -38,12 +67,10 @@ try:
 except Exception:
     ffmpeg = None
 
-# -------------- Helpers --------------
-
+# ---------------- Helpers ----------------
 def run(cmd: List[str], check: bool = True) -> subprocess.CompletedProcess:
     """Run a subprocess with inherited stdout/stderr."""
     return subprocess.run(cmd, check=check)
-
 
 def ensure_deps():
     if whisper is None:
@@ -51,15 +78,12 @@ def ensure_deps():
     if shutil.which("ffmpeg") is None:
         sys.exit("[fatal] ffmpeg is not installed or not on PATH. See script header for install instructions.")
 
-
 def is_url(s: str) -> bool:
     return s.startswith("http://") or s.startswith("https://")
-
 
 def sanitize_filename(name: str) -> str:
     name = re.sub(r"[^\w\-\. ]+", "_", name).strip()
     return re.sub(r"\s+", " ", name)
-
 
 def download_media(url: str, outdir: Path) -> Path:
     """Download media via yt-dlp; return downloaded filepath."""
@@ -68,19 +92,17 @@ def download_media(url: str, outdir: Path) -> Path:
     outtmpl = str(outdir / "%(title).200B [%(id)s].%(ext)s")
     cmd = [
         sys.executable, "-m", "yt_dlp",
-        "-f", "bestaudio/best",  # get best available
+        "-f", "bestaudio/best",
         "--no-playlist",
         "-o", outtmpl,
         url,
     ]
     print("[info] Downloading with yt-dlp…")
     run(cmd)
-    # Find the most recent file in outdir
     files = sorted(outdir.glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)
     if not files:
         sys.exit("[fatal] Download failed: no file produced")
     return files[0]
-
 
 def extract_audio(input_path: Path, out_wav: Path, sample_rate: int = 16000) -> Path:
     """Extract mono 16kHz PCM WAV using ffmpeg."""
@@ -96,7 +118,6 @@ def extract_audio(input_path: Path, out_wav: Path, sample_rate: int = 16000) -> 
     run(cmd)
     return out_wav
 
-
 def format_timestamp(seconds: float) -> str:
     """Format seconds to SRT/VTT timestamp (HH:MM:SS,mmm)."""
     if seconds is None:
@@ -107,13 +128,11 @@ def format_timestamp(seconds: float) -> str:
     ms = int((seconds - int(seconds)) * 1000)
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
-
 def write_txt(segments: List[Dict[str, Any]], out_path: Path) -> None:
     with out_path.open("w", encoding="utf-8") as f:
         for seg in segments:
             f.write(seg.get("text", "").strip() + "\n")
     print(f"[ok] Wrote TXT: {out_path}")
-
 
 def write_srt(segments: List[Dict[str, Any]], out_path: Path) -> None:
     with out_path.open("w", encoding="utf-8") as f:
@@ -123,7 +142,6 @@ def write_srt(segments: List[Dict[str, Any]], out_path: Path) -> None:
             text = seg.get("text", "").strip()
             f.write(f"{i}\n{start} --> {end}\n{text}\n\n")
     print(f"[ok] Wrote SRT: {out_path}")
-
 
 def write_vtt(segments: List[Dict[str, Any]], out_path: Path) -> None:
     with out_path.open("w", encoding="utf-8") as f:
@@ -135,15 +153,12 @@ def write_vtt(segments: List[Dict[str, Any]], out_path: Path) -> None:
             f.write(f"{start} --> {end}\n{text}\n\n")
     print(f"[ok] Wrote VTT: {out_path}")
 
-
 def write_json(result: Dict[str, Any], out_path: Path) -> None:
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
     print(f"[ok] Wrote JSON: {out_path}")
 
-
-# -------------- Main transcription --------------
-
+# ---------------- Transcription ----------------
 def transcribe(
     source: str,
     output_dir: Path,
@@ -173,7 +188,6 @@ def transcribe(
         model = whisper.load_model(model_name)
 
         print("[info] Transcribing… this can take a while on first run")
-        # fp16 only if cuda is available
         try:
             import torch
             fp16 = torch.cuda.is_available()
@@ -187,7 +201,6 @@ def transcribe(
             verbose=verbose,
         )
 
-        # Prepare outputs
         segments = []
         for seg in result.get("segments", []):
             segments.append({
@@ -205,7 +218,6 @@ def transcribe(
             "source": str(source),
         }
 
-        # Write files
         txt_path = output_dir / f"{base_name}.txt"
         srt_path = output_dir / f"{base_name}.srt"
         vtt_path = output_dir / f"{base_name}.vtt"
@@ -220,15 +232,12 @@ def transcribe(
         return outputs
 
     finally:
-        # Clean up temp files
         try:
             shutil.rmtree(tmpdir, ignore_errors=True)
         except Exception:
             pass
 
-
-# -------------- CLI --------------
-
+# ---------------- CLI ----------------
 def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Transcribe local/online videos to text/SRT/VTT/JSON with Whisper")
 
@@ -247,7 +256,6 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
 
     return p.parse_args(argv)
 
-
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
     source = args.input or args.url
@@ -263,12 +271,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
         return 0
     except SystemExit as e:
-        # Re-raise system exits (from ensure_deps etc.)
         raise e
     except Exception as e:
         print(f"[error] {e}", file=sys.stderr)
         return 2
 
-
+# ---------------- Entry ----------------
 if __name__ == "__main__":
+    banner()   # Show banner first
     raise SystemExit(main())
