@@ -10,7 +10,7 @@ Auralis is an AI-powered transcription tool that converts audio and video into a
 
 ## Dependencies
 pip install openai-whisper yt-dlp ffmpeg-python tqdm
-- ffmpeg must be installed on your system and on PATH
+Note: ffmpeg must be installed on your system and on PATH
 * Windows (scoop): scoop install ffmpeg
 * macOS (brew): brew install ffmpeg
 * Linux (apt): sudo apt-get install ffmpeg
