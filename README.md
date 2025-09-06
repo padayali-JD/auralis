@@ -28,5 +28,8 @@ Notes
 - For best accuracy across languages, use --model large-v3 (slow, big), otherwise small/medium are good trade‑offs.
 
 ## 🎯 Usage
-Transcribe a local video: python auralis.py --input path/to/video.mp4 --model small
-Transcribe from a YouTube URL: python auralis.py --url https://www.youtube.com/watch?v=<id> --model base
+Transcribe a local video: 
+python auralis.py --input path/to/video.mp4 --model small
+
+Transcribe from a YouTube URL: 
+python auralis.py --url https://www.youtube.com/watch?v=<id> --model base
